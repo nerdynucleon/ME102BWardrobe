@@ -73,7 +73,7 @@ int main(int argc, char ** argv)
   tcsetattr(STDIN_FILENO, TCSANOW, &term_prop);
   
   int fd = open_port();
-  sleep(2);
+  sleep(2); // require sleep for arduino to connect
   if (fd != -1) 
     printf("open port success!\n");
   pthread_t send_thread, recv_thread;
