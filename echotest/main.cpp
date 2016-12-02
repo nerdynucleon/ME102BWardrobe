@@ -11,8 +11,7 @@
 #include <signal.h>
 
 #include <fcntl.h>   /* File control definitions */
-#include <termios.h> /* POSIX terminal control definitions */
-#include <pthread.h> /* POSIX threading library*/
+#include <termios.h>
 
 #define DROPLET_IP "138.68.40.50"
 #define DROPLET_PORT 80
@@ -60,7 +59,11 @@ enum class arduino_cmd{
     y_up = 1,
     y_down = 2,
     z_extend = 3,
-    z_retract = 4
+    z_retract = 4,
+    y_up_block = 5,
+    y_down_block = 6,
+    z_extend_block = 7,
+    z_retract_block = 8
 };
 
 enum class jetson_cmd_id
@@ -106,144 +109,174 @@ jetson_cmd parse_server(char * cmd_server)
     return parsed_cmd;
 }
 
-// Unit Tests for Low Level Control
-
-/*    
-    execute_arduino_cmd(arduino_cmd::x, -1);
-    execute_arduino_cmd(arduino_cmd::x, 10000);
-    execute_arduino_cmd(arduino_cmd::x, 0);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::x, 1);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::x, 2);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::x, 5);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::x, 10);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::y_up, -1);
-    execute_arduino_cmd(arduino_cmd::y_up, -1);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::y_down, -1);
-    execute_arduino_cmd(arduino_cmd::y_down, -1);
-    execute_arduino_cmd(arduino_cmd::z_extend, -1);
-    execute_arduino_cmd(arduino_cmd::z_extend, -1);
-    sleep(1);
-    execute_arduino_cmd(arduino_cmd::z_retract, -1);
-    execute_arduino_cmd(arduino_cmd::z_retract, -1);
-*/
-
-void execute_arduino_cmd(arduino_cmd a_cmd, int arg)
+void execute_arduino_cmd(arduino_cmd a_cmd, int arg = 0)
 {
     char read_buff[3] = {0};
     char cmd[6];
     switch(a_cmd)
     {
         case arduino_cmd::x :
-            if (arg < 10000 && arg >= 0)
+            if (arg < 1000 && arg > -1000)
             {
-                sprintf(cmd, "x%04d\n", arg); 
-                printf("Writing to Arduino:%s\n", cmd);
+                if (arg < 0)
+                    sprintf(cmd, "x-%03d\n", -arg); 
+                else 
+                    sprintf(cmd, "x+%03d\n", arg); 
+                printf("Writing to Arduino:%s", cmd);
                 write(arduinofd, cmd, 6);
-                if(read(arduinofd, read_buff, 2) > 0)
-                    printf("Received Arduino:%s\n", read_buff); 
+                
+                printf("Waiting for arduino response...\n"); 
+                read(arduinofd, read_buff, 2);
+                printf("Received Arduino:%s", read_buff); 
             } else {
                 printf("invalid number of revolutions\n");
             }
             break;
         case arduino_cmd::y_up :
             sprintf(cmd, "yU\n"); 
-            printf("Writing to Arduino:%s\n", cmd);
+            printf("Writing to Arduino:%s", cmd);
             write(arduinofd, cmd, 3);
-            if(read(arduinofd, read_buff, 2) > 0)
-                printf("Received Arduino:%s\n", read_buff); 
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
             break;
         case arduino_cmd::y_down :
             sprintf(cmd, "yD\n"); 
-            printf("Writing to Arduino:%s\n", cmd);
+            printf("Writing to Arduino:%s", cmd);
             write(arduinofd, cmd, 3);
-            if(read(arduinofd, read_buff, 2) > 0)
-                printf("Received Arduino:%s\n", read_buff); 
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
             break;
         case arduino_cmd::z_extend :
             sprintf(cmd, "zE\n"); 
-            printf("Writing to Arduino:%s\n", cmd);
+            printf("Writing to Arduino:%s", cmd);
             write(arduinofd, cmd, 3);
-            if(read(arduinofd, read_buff, 2) > 0)
-                printf("Received Arduino:%s\n", read_buff); 
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
             break;
         case arduino_cmd::z_retract :
             sprintf(cmd, "zR\n"); 
-            printf("Writing to Arduino:%s\n", cmd);
+            printf("Writing to Arduino:%s", cmd);
             write(arduinofd, cmd, 3);
-            if(read(arduinofd, read_buff, 2) > 0)
-                printf("Received Arduino:%s\n", read_buff); 
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
+            break;
+        case arduino_cmd::y_up_block :
+            sprintf(cmd, "yUB\n"); 
+            printf("Writing to Arduino:%s", cmd);
+            write(arduinofd, cmd, 4);
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
+            break;
+        case arduino_cmd::y_down_block :
+            sprintf(cmd, "yDB\n"); 
+            printf("Writing to Arduino:%s", cmd);
+            write(arduinofd, cmd, 4);
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
+            break;
+        case arduino_cmd::z_extend_block :
+            sprintf(cmd, "zEB\n"); 
+            printf("Writing to Arduino:%s", cmd);
+            write(arduinofd, cmd, 4);
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
+            break;
+        case arduino_cmd::z_retract_block :
+            sprintf(cmd, "zRB\n"); 
+            printf("Writing to Arduino:%s", cmd);
+            write(arduinofd, cmd, 4);
+            
+            printf("Waiting for arduino response...\n"); 
+            read(arduinofd, read_buff, 2);
+            printf("Received Arduino:%s", read_buff); 
             break;
     }
 
     fsync(arduinofd);
 }
 
+int calculate_x_movement(int current_location, int desired_pos)
+{
+    int movement = 0;
+
+    // -1 location not exactly offset from first notch
+    if (current_location == -1 )
+    {
+        movement += 45; // 1 turn
+        current_location = 0; 
+    }
+    if (desired_pos == -1 )
+    {
+        movement -= 45; // 1 turn
+        current_location -= 1;
+    }
+ 
+    movement += 51 * (desired_pos - current_location); // 1.25 turns between notches
+    
+    return movement;
+}
+
 void execute_jetson_cmd(jetson_cmd cmd)
 {
+    static int current_location = -1;
     printf("Executing Following CMD:\n");
     if(cmd.id == jetson_cmd_id::invalid)
     {
         printf("Invalid CMD\n");
     }
-    else if(cmd.id == jetson_cmd_id::get)
+    else if(cmd.id == jetson_cmd_id::get and cmd.arg >= 0 and cmd.arg <= 9)
     {
         printf("GET CMD%d\n", cmd.arg);
+        execute_arduino_cmd(arduino_cmd::x, calculate_x_movement(current_location, cmd.arg));
+        current_location = cmd.arg;
+       
+        execute_arduino_cmd(arduino_cmd::z_retract_block);
+        execute_arduino_cmd(arduino_cmd::y_up_block);
+        execute_arduino_cmd(arduino_cmd::z_extend);
+        sleep(2);
+        execute_arduino_cmd(arduino_cmd::y_down);
+        execute_arduino_cmd(arduino_cmd::z_extend_block);
+        
+        execute_arduino_cmd(arduino_cmd::x, calculate_x_movement(current_location, -1));
+        current_location = -1;
     }
     else if(cmd.id == jetson_cmd_id::put)
     {
         printf("PUT CMD%d\n", cmd.arg);
+        
+        // Move to storage spot
+        execute_arduino_cmd(arduino_cmd::y_up);
+        execute_arduino_cmd(arduino_cmd::x, calculate_x_movement(current_location, cmd.arg));
+        current_location = cmd.arg;
+
+        // Place Article
+        execute_arduino_cmd(arduino_cmd::z_retract_block);
+        execute_arduino_cmd(arduino_cmd::y_down_block);
+      
+        // return to original position 
+        execute_arduino_cmd(arduino_cmd::z_extend_block); 
+        execute_arduino_cmd(arduino_cmd::x, calculate_x_movement(current_location, -1));
+        current_location = -1;
     }
     else if(cmd.id == jetson_cmd_id::id)
     {
         printf("ID CMD\n");
     }
     
-}
-
-void *jetson_to_server(void * fd_ptr)
-{
-    int fd = *((int *) fd_ptr);
-    for(;;)
-    {
-        int c_send = getchar();
-        if(c_send != -1)
-        {
-            if(write(fd, &c_send, 1) == -1)
-            {
-                printf("WRITE ERROR: connection to droplet most likely died\n");
-                printf("exiting write thread\n");
-                pthread_exit( NULL );
-            }
-        }
-    }
-}
-
-void *server_to_jetson(void * fd_ptr)
-{
-    int fd = *((int *) fd_ptr);
-    for(;;)
-    {
-        char c_recv[1024];
-        memset(c_recv, 0, sizeof(c_recv));
-        int res = read(fd, &c_recv, sizeof(c_recv));
-        if(res == 0)
-        {
-            printf("READ ERROR: connection to droplet most likely died\n");
-            printf("exiting read thread\n");
-            pthread_exit( NULL );
-        }
-        if(res > 0)
-        {
-            jetson_cmd cmd = parse_server(c_recv);
-            execute_jetson_cmd(cmd);
-        }
-    }
 }
 
 int main(int argc, char *argv[])
@@ -261,12 +294,26 @@ int main(int argc, char *argv[])
         printf("\n Error : Failed to connect to Arduino \n");
         return -1;
     }
+
+/*    
+    jetson_cmd cmd;
+    // Test sequence of Position Commands
+    cmd.arg = 0;
+    cmd.id = jetson_cmd_id::put;
+    execute_jetson_cmd(cmd);
+    sleep(2);
+
+    cmd.id = jetson_cmd_id::get;
+    execute_jetson_cmd(cmd);
+    sleep(2);
+*/    
+    
     struct sockaddr_in serv_addr; 
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Error : Could not create socket \n");
         return 1;
-    } 
+    }
 
     memset(&serv_addr, '0', sizeof(serv_addr)); 
 
@@ -283,18 +330,28 @@ int main(int argc, char *argv[])
     } 
     signal(SIGPIPE, SIG_IGN);
 
-    // Create Threads for Sending and Receiving
-    pthread_t send_thread, recv_thread;
-    pthread_create(&send_thread, NULL, jetson_to_server, &sockfd);
-    pthread_create(&recv_thread, NULL, server_to_jetson, &sockfd);
-    
-    pthread_join(send_thread, NULL);
-    pthread_join(recv_thread, NULL);
+    // Wait for lambda function requests 
+    for(;;)
+    {
+        char c_recv[1024];
+        memset(c_recv, 0, sizeof(c_recv));
+        int res = read(sockfd, &c_recv, sizeof(c_recv));
+        if(res == 0)
+        {
+            printf("READ ERROR: connection to droplet most likely died\n");
+            return -1;
+        }
+        if(res > 0)
+        {
+            jetson_cmd cmd = parse_server(c_recv);
+            execute_jetson_cmd(cmd);
+            write(sockfd, "<done>\n", strlen("<done>\n"));
+        }
+    }
     
     printf("\n Closing Connection \n");
     close(sockfd);
- 
-    pthread_exit(NULL);
+
     return 0;
 }
 

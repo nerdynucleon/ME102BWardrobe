@@ -1,5 +1,5 @@
 /* Low Level Actuator Control for ME 102B Smart Wardrobe */
-#define CLOCKSPEED_FUSES SPI_CLOCK_DIV64
+// #define CLOCKSPEED_FUSES SPI_CLOCK_DIV64
 #include <Stepper.h>
 
 const int stepsPerRevolution = 200;// change this to fit the number of steps per revolution
@@ -13,9 +13,9 @@ const int in2 = 5;
 // large linear actuator
 const int enB = 2;
 const int in3 = 4;
-const int in4 = 12;
+const int in4 = 3;
 // enable stepper
-const int enStep = 3;
+const int enStep = 12;
 
 // initialize the stepper library on pins 8 through 11:
 Stepper myStepper(stepsPerRevolution, 8,9,10,11);            
@@ -40,8 +40,8 @@ void setup() {
   pinMode(in4, OUTPUT);
   pinMode(enStep, OUTPUT);
   
-  // Moderate Holding Torque
-  analogWrite(enStep, 64);
+  // Holding Torque Off
+  digitalWrite(enStep, LOW);
 }
 
 
@@ -61,12 +61,14 @@ int blocking_read()
 int serial_parse_int()
 {
   int return_val = 0;
+  int multiplier = 1;
   while(Serial.available() < 4) {}
-  return_val += (Serial.read() - 48) *1000;
+  if (Serial.read() == 45)
+      multiplier = -1;
   return_val += (Serial.read() - 48) *100;
   return_val += (Serial.read() - 48) *10;
   return_val += Serial.read() - 48;
-  return return_val;
+  return return_val * multiplier;
 }
 
 
@@ -79,13 +81,14 @@ void loop() {
   char cmd = blocking_read();
   if (cmd == 'x')
   {
-    int numberofsteps = 200 * serial_parse_int();
+    int numberofsteps = 25 * serial_parse_int();
     blocking_read(); // new line char
     // Full Power
-    analogWrite(enStep, 255);
+    digitalWrite(enStep, HIGH);
     myStepper.step(numberofsteps);
-    // Moderate Holding Torque
-    analogWrite(enStep, 64);
+    // Hold torque for a second
+    delay(500);
+    digitalWrite(enStep, LOW);
     Serial.write("d\n"); 
   } 
   if (cmd == 'y')
@@ -98,8 +101,9 @@ void loop() {
         digitalWrite(in2, LOW); 
         digitalWrite(enA, HIGH);
         // Wait for Actuation to Complete (Open Loop)
-        delay(6000);
+        delay(7000);
         digitalWrite(enA, LOW);
+        Serial.write("d\n");
     }
     if (cmd == 'D')
     {
@@ -107,10 +111,10 @@ void loop() {
         digitalWrite(in2, HIGH); 
         digitalWrite(enA, HIGH);
         // Wait for Actuation to Complete (Open Loop)
-        delay(6000);
+        delay(7000);
         digitalWrite(enA, LOW);
+        Serial.write("d\n");
     }     
-    Serial.write("d\n");
   }
   if (cmd == 'z')
   {
@@ -122,8 +126,9 @@ void loop() {
         digitalWrite(in4, HIGH); 
         digitalWrite(enB, HIGH);
         // Wait for Actuation to Complete (Open Loop)
-        delay(10000);
+        delay(6000);
         digitalWrite(enB, LOW);
+        Serial.write("d\n");
     } 
     if (cmd == 'R')
     {
@@ -131,10 +136,10 @@ void loop() {
         digitalWrite(in4, LOW); 
         digitalWrite(enB, HIGH);
         // Wait for Actuation to Complete (Open Loop)
-        delay(10000);
+        delay(6000);
         digitalWrite(enB, LOW);
+        Serial.write("d\n");
     }    
-    Serial.write("d\n");
   }
 }
 
